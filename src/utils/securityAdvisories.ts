@@ -1,27 +1,29 @@
-import advisories from '~/data/security-advisories.json';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { fetchPosts } from '~/utils/blog';
+import { getPermalink } from '~/utils/permalinks';
 
-export type AdvisorySeverity = 'critical' | 'high' | 'moderate' | 'low';
+type AdvisoryData = CollectionEntry<'securityAdvisory'>['data'];
 
-export interface AdvisoryReference {
-  label: string;
-  url: string;
-}
+export type AdvisorySeverity = AdvisoryData['severity'];
 
-export interface SecurityAdvisory {
-  version: string;
-  date: string;
-  severity: AdvisorySeverity;
-  summary: string;
-  cves: string[];
-  bulletins: AdvisoryReference[];
+export interface SecurityAdvisory extends Omit<AdvisoryData, 'post'> {
   post: string;
 }
 
 const NVD_BASE_URL = 'https://nvd.nist.gov/vuln/detail/';
 
-export const getSecurityAdvisories = (): SecurityAdvisory[] =>
-  [...(advisories as SecurityAdvisory[])].sort((a, b) => b.date.localeCompare(a.date));
+export const getSecurityAdvisories = async (): Promise<SecurityAdvisory[]> => {
+  const [entries, posts] = await Promise.all([getCollection('securityAdvisory'), fetchPosts()]);
 
-export const getLatestSecurityAdvisory = (): SecurityAdvisory | null => getSecurityAdvisories()[0] ?? null;
+  return entries
+    .map(({ data }) => {
+      const post = posts.find((p) => p.id === data.post.id);
+      if (!post) {
+        throw new Error(`Security advisory ${data.version} references unpublished post "${data.post.id}"`);
+      }
+      return { ...data, post: getPermalink(post.permalink, 'post') };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
+};
 
 export const getCveUrl = (cve: string): string => `${NVD_BASE_URL}${cve}`;

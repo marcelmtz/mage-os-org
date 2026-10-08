@@ -1,5 +1,5 @@
-import { z, defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
+import { z, defineCollection, reference } from 'astro:content';
+import { file, glob } from 'astro/loaders';
 
 const metadataDefinition = () =>
   z
@@ -101,8 +101,24 @@ const eventCollection = defineCollection({
   }),
 });
 
+const securityAdvisoryCollection = defineCollection({
+  loader: file('src/data/security-advisories.json', {
+    parser: (text) => JSON.parse(text).map((advisory: { version: string }) => ({ id: advisory.version, ...advisory })),
+  }),
+  schema: z.object({
+    version: z.string(),
+    date: z.string().date(),
+    severity: z.enum(['critical', 'high', 'moderate', 'low']),
+    summary: z.string(),
+    cves: z.array(z.string().regex(/^CVE-\d{4}-\d+$/)),
+    bulletins: z.array(z.object({ label: z.string(), url: z.string().url() })),
+    post: reference('post'),
+  }),
+});
+
 export const collections = {
   authors: authorCollection,
   post: postCollection,
   event: eventCollection,
+  securityAdvisory: securityAdvisoryCollection,
 };

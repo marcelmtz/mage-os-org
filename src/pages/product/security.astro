@@ -7,11 +7,11 @@ import FAQs from '~/components/widgets/FAQs.astro';
 import Callout from '~/components/ui/Callout.astro';
 import { Icon } from 'astro-icon/components';
 import { getFormattedDate } from '~/utils/utils';
-import { getSecurityAdvisories, getLatestSecurityAdvisory, getCveUrl } from '~/utils/securityAdvisories';
+import { getSecurityAdvisories, getCveUrl } from '~/utils/securityAdvisories';
 import type { AdvisorySeverity } from '~/utils/securityAdvisories';
 
-const advisories = getSecurityAdvisories();
-const latestAdvisory = getLatestSecurityAdvisory();
+const advisories = await getSecurityAdvisories();
+const latestAdvisory = advisories[0];
 
 const severityClasses: Record<AdvisorySeverity, string> = {
   critical: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
@@ -40,9 +40,9 @@ const metadata = {
     </Fragment>
   </PageHero>
 
-  <section class="px-4 py-8 sm:px-6 mx-auto lg:px-8 max-w-4xl">
-    {
-      latestAdvisory && (
+  {
+    latestAdvisory && (
+      <section class="px-4 py-8 sm:px-6 mx-auto lg:px-8 max-w-4xl">
         <div class="p-6 bg-gradient-to-r from-orange-50 to-amber-50/50 dark:from-slate-800 dark:to-slate-800/80 rounded-lg border-l-4 border-primary mb-12">
           <span class="text-xs uppercase font-bold text-primary tracking-wide">Latest Security Release</span>
           <h2 class="text-2xl font-bold mt-2 font-heading">
@@ -63,9 +63,9 @@ const metadata = {
             <Icon name="tabler:chevron-right" class="w-4 h-4 ml-1" />
           </a>
         </div>
-      )
-    }
-  </section>
+      </section>
+    )
+  }
 
   <Features2
     id="get-notified"
